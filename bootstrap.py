@@ -25,58 +25,50 @@ from sklearn.model_selection import train_test_split
 stopWords = stopwords.words("english")
 stemmer = PorterStemmer()
 
+
 def format_sentence(sent):
 	words = [word.lower() for word in word_tokenize(sent)]
 	filtered_words = [stemmer.stem(word) for word in words if word not in stopWords]
 	return " ".join(filtered_words)
-
-paths = glob.glob("./aclImdb/train/pos/*.txt")
-pos_reviews = []
-pos_reviews_raw = []
-
-
-for path in paths:
-    reviewText = open(path, 'r', encoding="latin-1").read()
-    pos_reviews_raw.append(format_sentence(reviewText))
-    #pos_reviews_raw.append(reviewText)
-    #f.value += 1
-
-paths = glob.glob("./aclImdb/train/neg/*.txt")
-neg_reviews = []
-neg_reviews_raw = []
-
-for path in paths:
-    reviewText = open(path, 'r', encoding="utf8").read()
-    neg_reviews_raw.append(format_sentence(reviewText))
-    # neg_reviews_raw.append(reviewText)
-    #f.value += 1
-
-
 
 
 max_features = 20000
 maxlen = 80  # cut texts after this number of words (among top max_features most common words)
 batch_size = 32
 
-# for sent in pos_reviews_raw:
-# 	pos_reviews.append(format_sentence(sent))
-
-# for sent in neg_reviews_raw:
-# 	neg_reviews.append(format_sentence(sent))
-
-
-
 tk = text.Tokenizer(num_words=max_features, lower=True, split=" ")
-tk.fit_on_texts(pos_reviews_raw+neg_reviews_raw)
-pos_reviews = tk.texts_to_sequences(pos_reviews_raw)
-neg_reviews = tk.texts_to_sequences(neg_reviews_raw)
-pos_review_sent = [1]*len(pos_reviews)
-neg_review_sent = [0]*len(neg_reviews)
+df = pd.read_csv('./bootstrap.csv', encoding = "ISO-8859-1")
+# print (df.shape)
+df = df[~df['sentiment'].isin(['Z','z'])]
+# print (df.shape)
+df["sentiment"] = df["sentiment"].apply(lambda x: 1 if x=="P" else 0)
+df = df.sample(frac=1).reset_index(drop=True)
 
-X = pos_reviews + neg_reviews
-Y = pos_review_sent + neg_review_sent
+
+X = [format_sentence(i) for i in df.text.astype(str).values.tolist()]
+# # print (x_test)
+Y = df['sentiment'].values.tolist()
+#tk.fit_on_texts(x_test)
+
+
 x_train, x_test, y_train, y_test =train_test_split(X, Y, test_size=0.33, random_state=42)
 
+
+print('Loading data...')
+# # (x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=max_features)
+# x_train = train_set.text.astype(str).values.tolist()
+# y_train	= train_set['sentiment'].values.tolist()
+
+
+# x_test = test_set.text.astype(str).values.tolist()
+# # # print (x_test)
+# y_test = test_set['sentiment'].values.tolist()
+tk.fit_on_texts(x_train)
+x_train = tk.texts_to_sequences(x_train)
+x_test = tk.texts_to_sequences(x_test)
+# cleprint ("XTEST")
+# print (x_test)
+# print (x_train, y_train)
 print(len(x_train), 'train sequences')
 print(len(x_test), 'test sequences')
 

@@ -75,13 +75,44 @@ neg_review_sent = [0]*len(neg_reviews)
 
 X = pos_reviews + neg_reviews
 Y = pos_review_sent + neg_review_sent
-x_train, x_test, y_train, y_test =train_test_split(X, Y, test_size=0.33, random_state=42)
+x_train, x_val, y_train, y_val =train_test_split(X, Y, test_size=0.33, random_state=42)
+print (x_val, y_val)
+print (len(x_val))
+print (len(y_val))
+#x_train = X
+#y_train = Y
+#
+#columns = ["text", "sentiment"]
+#df_pos = pd.DataFrame(pos_reviews, columns=['text'])
+#df_pos['sentiment'] = 1
 
+print ("Printing df pos: ")
+#print (df_pos)
+
+df = pd.read_csv('./bootstrap.csv', encoding = "ISO-8859-1")
+# print (df.shape)
+df = df[~df['sentiment'].isin(['Z','z'])]
+# print (df.shape)
+df["sentiment"] = df["sentiment"].apply(lambda x: 1 if x=="P" else 0)
+# print (df["sentiment"])
+
+
+print('Loading data...')
+#(x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=max_features)
+x_test = [format_sentence(i) for i in df.text.astype(str).values.tolist()]
+# # print (x_test)
+y_test = df['sentiment'].values.tolist()
+#tk.fit_on_texts(x_test)
+x_test = tk.texts_to_sequences(x_test)
+# cleprint ("XTEST")
+# print (x_test)
+# print (x_train, y_train)
 print(len(x_train), 'train sequences')
 print(len(x_test), 'test sequences')
 
 print('Pad sequences (samples x time)')
 x_train = sequence.pad_sequences(x_train, maxlen=maxlen)
+x_val = sequence.pad_sequences(x_val, maxlen=maxlen)
 x_test = sequence.pad_sequences(x_test, maxlen=maxlen)
 print('x_train shape:', x_train.shape)
 print('x_test shape:', x_test.shape)
@@ -103,7 +134,7 @@ print('Train...')
 model.fit(x_train, y_train,
           batch_size=batch_size,
           epochs=5,
-          validation_split=0.15)
+          validation_data=(x_val, y_val))
 score, acc = model.evaluate(x_test, y_test,
                             batch_size=batch_size)
 print('Test score:', score)
